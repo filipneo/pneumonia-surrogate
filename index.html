@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pneumonia Surrogate - ONNX Demo</title>
+
+  <!--
+    The dist bundle already includes onnxruntime-web and registers
+    <pneumonia-surrogate> as a custom element. No separate ort script needed.
+  -->
+  <script src="./dist/pneumonia-surrogate.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #111;
+      color: #ddd;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    header {
+      background: #1a1a2e;
+      padding: 12px 20px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    header h1 { margin: 0; font-size: 16px; color: #90caf9; letter-spacing: 1px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      height: calc(100vh - 49px);
+    }
+
+    /* Left panel */
+    .panel {
+      background: #161622;
+      border-right: 1px solid #2a2a3a;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .panel-section h2 {
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: #ffd54f;
+      margin: 0 0 10px;
+      text-transform: uppercase;
+    }
+
+    .control-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+    .control-row label { color: #90caf9; font-size: 11px; display: flex; justify-content: space-between; }
+    .control-row input[type="range"] { width: 100%; cursor: pointer; accent-color: #42a5f5; }
+
+    .monitor-grid { display: flex; flex-direction: column; gap: 4px; }
+    .monitor-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #1e1e2e; }
+    .monitor-row .name { color: #80cbc4; font-size: 11px; }
+    .monitor-row .value { color: #e0e0e0; font-size: 11px; min-width: 64px; text-align: right; }
+
+    .status-row { font-size: 11px; color: #888; }
+    .status-row span { color: #fff; }
+
+    /* Right panel */
+    .main {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    .main h2 {
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: #ce93d8;
+      margin: 0 0 8px;
+      text-transform: uppercase;
+    }
+
+    canvas {
+      background: #0d0d1a;
+      border: 1px solid #2a2a3a;
+      border-radius: 3px;
+      display: block;
+      width: 100%;
+    }
+
+    .chart-label {
+      font-size: 10px;
+      color: #888;
+      margin-bottom: 2px;
+    }
+
+    .chart-block { margin-bottom: 8px; }
+
+    /* Buttons */
+    .btn-row { display: flex; gap: 8px; }
+    button {
+      padding: 6px 16px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+    #btn-start { background: #1b5e20; color: #a5d6a7; }
+    #btn-start:hover { background: #2e7d32; }
+    #btn-stop  { background: #37474f; color: #b0bec5; }
+    #btn-stop:hover { background: #455a64; }
+    #btn-reset { background: #4a1942; color: #ce93d8; }
+    #btn-reset:hover { background: #6a1b9a; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>PNEUMONIA SURROGATE - ONNX DEMO</h1>
+  <pneumonia-surrogate
+      id="surrogate"
+      total-compliance="60"
+      dv="150"
+      cshunt-frac="5">
+  </pneumonia-surrogate>
+</header>
+
+<div class="layout">
+
+  <!-- Left panel: controls + monitor variables -->
+  <div class="panel">
+
+    <div class="panel-section">
+      <h2>Execution</h2>
+      <div class="btn-row">
+        <button id="btn-start">START</button>
+        <button id="btn-stop">STOP</button>
+        <button id="btn-reset">RESET</button>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h2>Control Variables</h2>
+
+      <div class="control-row">
+        <label>
+          TotalCompliance
+          <span id="val-tc">60</span>
+        </label>
+        <input type="range" id="slider-tc" min="10" max="200" step="1" value="60" />
+      </div>
+
+      <div class="control-row">
+        <label>
+          DV (Dead Volume)
+          <span id="val-dv">150</span>
+        </label>
+        <input type="range" id="slider-dv" min="150" max="400" step="1" value="150" />
+      </div>
+
+      <div class="control-row">
+        <label>
+          cShuntFrac
+          <span id="val-cs">5</span>
+        </label>
+        <input type="range" id="slider-cs" min="2" max="70" step="0.5" value="5" />
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h2>Monitor Variables</h2>
+      <div class="monitor-grid" id="monitor-grid">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="status-row">Step: <span id="step-counter">0</span></div>
+    </div>
+
+  </div>
+
+  <!-- Right panel: real-time waveforms -->
+  <div class="main">
+    <h2>Real-Time Waveforms</h2>
+    <div id="charts-container">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+  // ---- Constants ------------------------------------------------------------
+
+  const PLOT_VARS = [
+    "lungs.q_in[1].p",
+    "lungs.q_in[1].m_flow",
+    "Ecg.ecg",
+    "EithaPressure.pressure",
+  ];
+
+  const MONITOR_VARS = [
+    "filter.y",
+    "currentHeartReat.y",
+    "arterialPressure.systolic",
+    "arterialPressure.diastolic",
+    "arterial.sO2",
+    "arterial.pO2",
+    "arterial.pCO2",
+    "arterial.pH",
+    "tissueUnit[1].pH",
+    "venous.pH",
+  ];
+
+  const DISPLAY_STEPS = 300;
+  // One colour per waveform chart.
+  const CHART_COLORS = ["#42a5f5", "#66bb6a", "#ffca28", "#ef5350"];
+
+  // ---- Element refs ---------------------------------------------------------
+
+  const surrogateEl = document.getElementById("surrogate");
+  const stepCounter = document.getElementById("step-counter");
+  const monitorGrid = document.getElementById("monitor-grid");
+  const chartsContainer = document.getElementById("charts-container");
+
+  const sliderTC = document.getElementById("slider-tc");
+  const sliderDV = document.getElementById("slider-dv");
+  const sliderCS = document.getElementById("slider-cs");
+
+  // ---- Build monitor rows ---------------------------------------------------
+
+  const monitorValueEls = {};
+  for (const name of MONITOR_VARS) {
+    const row = document.createElement("div");
+    row.className = "monitor-row";
+    row.innerHTML = `<span class="name">${name}</span><span class="value" id="mon-${CSS.escape(name)}">-</span>`;
+    monitorGrid.appendChild(row);
+    monitorValueEls[name] = row.querySelector(".value");
+  }
+
+  // ---- Build waveform canvases ----------------------------------------------
+
+  const CANVAS_HEIGHT = 140;
+  const chartBuffers = {};    // name -> Float64Array(DISPLAY_STEPS)
+  const canvasEls = {};
+  const ctxs = {};
+
+  for (let i = 0; i < PLOT_VARS.length; i++) {
+    const name = PLOT_VARS[i];
+    chartBuffers[name] = new Float64Array(DISPLAY_STEPS);
+
+    const block = document.createElement("div");
+    block.className = "chart-block";
+    block.innerHTML = `<div class="chart-label">${name}</div>`;
+
+    const canvas = document.createElement("canvas");
+    canvas.height = CANVAS_HEIGHT;
+    block.appendChild(canvas);
+    chartsContainer.appendChild(block);
+
+    canvasEls[name] = canvas;
+    ctxs[name] = canvas.getContext("2d");
+  }
+
+  // ---- Canvas resize -------------------------------------------------------
+
+  function resizeCanvases() {
+    for (const name of PLOT_VARS) {
+      const canvas = canvasEls[name];
+      const w = canvas.clientWidth;
+      if (canvas.width !== w) {
+        canvas.width = w;
+        canvas.height = CANVAS_HEIGHT;
+      }
+    }
+  }
+
+  const resizeObserver = new ResizeObserver(resizeCanvases);
+  resizeObserver.observe(chartsContainer);
+  resizeCanvases();
+
+  // ---- Chart rendering ------------------------------------------------------
+
+  function drawChart(name, color) {
+    const canvas = canvasEls[name];
+    const ctx = ctxs[name];
+    const buf = chartBuffers[name];
+    const W = canvas.width;
+    const H = canvas.height;
+
+    if (W === 0 || H === 0) return;
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = "#0d0d1a";
+    ctx.fillRect(0, 0, W, H);
+
+    // Compute min/max for autoscaling with a small margin.
+    let minVal = Infinity, maxVal = -Infinity;
+    for (let i = 0; i < DISPLAY_STEPS; i++) {
+      if (buf[i] < minVal) minVal = buf[i];
+      if (buf[i] > maxVal) maxVal = buf[i];
+    }
+    const range = maxVal - minVal;
+    const margin = range === 0 ? 1 : range * 0.1;
+    const lo = minVal - margin;
+    const hi = maxVal + margin;
+    const span = hi - lo;
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+
+    for (let i = 0; i < DISPLAY_STEPS; i++) {
+      const x = (i / (DISPLAY_STEPS - 1)) * W;
+      const y = H - ((buf[i] - lo) / span) * H;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+
+    ctx.stroke();
+
+    // Latest value label in top-right.
+    const latest = buf[DISPLAY_STEPS - 1];
+    ctx.fillStyle = color;
+    ctx.font = "10px monospace";
+    ctx.textAlign = "right";
+    ctx.fillText(latest.toFixed(3), W - 4, 12);
+  }
+
+  // ---- Slider wiring --------------------------------------------------------
+
+  function syncSlider(sliderEl, valElId, propSetter) {
+    const valEl = document.getElementById(valElId);
+    sliderEl.addEventListener("input", () => {
+      const v = parseFloat(sliderEl.value);
+      valEl.textContent = v.toFixed(1);
+      propSetter(v);
+    });
+  }
+
+  syncSlider(sliderTC, "val-tc", (v) => { surrogateEl.totalCompliance = v; });
+  syncSlider(sliderDV, "val-dv", (v) => { surrogateEl.dv = v; });
+  syncSlider(sliderCS, "val-cs", (v) => { surrogateEl.cShuntFrac = v; });
+
+  // ---- Button wiring --------------------------------------------------------
+
+  document.getElementById("btn-start").addEventListener("click", () => surrogateEl.start());
+  document.getElementById("btn-stop").addEventListener("click",  () => surrogateEl.stop());
+  document.getElementById("btn-reset").addEventListener("click", async () => {
+    await surrogateEl.reset();
+    // Reset slider display values to defaults.
+    sliderTC.value = 60;  document.getElementById("val-tc").textContent = "60.0";
+    sliderDV.value = 150; document.getElementById("val-dv").textContent = "150.0";
+    sliderCS.value = 5;   document.getElementById("val-cs").textContent = "5.0";
+    // Clear chart buffers.
+    for (const name of PLOT_VARS) chartBuffers[name].fill(0);
+    for (const name of PLOT_VARS) drawChart(name, CHART_COLORS[PLOT_VARS.indexOf(name)]);
+    stepCounter.textContent = "0";
+  });
+
+  // ---- Event listener -------------------------------------------------------
+
+  document.addEventListener("surrogate-data", (event) => {
+    const { plot_vars, monitor_vars, step } = event.detail;
+
+    stepCounter.textContent = step;
+
+    // Update waveform buffers and redraw.
+    for (let i = 0; i < PLOT_VARS.length; i++) {
+      const name = PLOT_VARS[i];
+      const buf = chartBuffers[name];
+      // Roll buffer left by one and append the new value.
+      buf.copyWithin(0, 1);
+      buf[DISPLAY_STEPS - 1] = plot_vars[name];
+      drawChart(name, CHART_COLORS[i]);
+    }
+
+    // Update monitor value displays.
+    for (const name of MONITOR_VARS) {
+      const el = monitorValueEls[name];
+      if (el) el.textContent = monitor_vars[name].toFixed(3);
+    }
+  });
+</script>
+
+</body>
+</html>

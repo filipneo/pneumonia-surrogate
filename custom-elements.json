@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "2.0.0",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "pneumonia-surrogate.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "PneumoniaSurrogate",
+          "customElement": true,
+          "tagName": "pneumonia-surrogate",
+          "description": "Web Component that runs an ONNX surrogate model of a respiratory physiology simulator at ~30 Hz in the browser. Emits a `surrogate-data` CustomEvent on every inference tick.",
+          "members": [
+            {
+              "kind": "field",
+              "name": "totalCompliance",
+              "type": { "text": "number" },
+              "description": "Lung compliance control variable [10 – 200]. Mirrors the `total-compliance` attribute.",
+              "default": "60"
+            },
+            {
+              "kind": "field",
+              "name": "dv",
+              "type": { "text": "number" },
+              "description": "Dead volume control variable [150 – 400]. Mirrors the `dv` attribute.",
+              "default": "150"
+            },
+            {
+              "kind": "field",
+              "name": "cShuntFrac",
+              "type": { "text": "number" },
+              "description": "Shunt fraction control variable [2 – 70]. Mirrors the `cshunt-frac` attribute.",
+              "default": "5"
+            },
+            {
+              "kind": "method",
+              "name": "start",
+              "description": "Load the ONNX session (if not already cached) and begin the ~30 Hz autoregressive inference loop."
+            },
+            {
+              "kind": "method",
+              "name": "stop",
+              "description": "Pause the inference loop. The ONNX session remains loaded and can be resumed with start()."
+            },
+            {
+              "kind": "method",
+              "name": "reset",
+              "description": "Stop execution, restore all control variables to their defaults, and reload the warm-start seed into the history buffers."
+            }
+          ],
+          "attributes": [
+            {
+              "name": "model-url",
+              "type": { "text": "string" },
+              "description": "URL to the surrogate_model.onnx file. Defaults to the published CDN location for this package version.",
+              "fieldName": "_modelUrl"
+            },
+            {
+              "name": "scalers-url",
+              "type": { "text": "string" },
+              "description": "URL to scalers.json. Defaults to the published CDN location for this package version.",
+              "fieldName": "_scalersUrl"
+            },
+            {
+              "name": "seed-url",
+              "type": { "text": "string" },
+              "description": "URL to golden_seed.json. Defaults to the published CDN location for this package version.",
+              "fieldName": "_seedUrl"
+            },
+            {
+              "name": "total-compliance",
+              "type": { "text": "number" },
+              "default": "60",
+              "description": "Lung compliance control variable [10 – 200].",
+              "fieldName": "totalCompliance"
+            },
+            {
+              "name": "dv",
+              "type": { "text": "number" },
+              "default": "150",
+              "description": "Dead volume control variable [150 – 400].",
+              "fieldName": "dv"
+            },
+            {
+              "name": "cshunt-frac",
+              "type": { "text": "number" },
+              "default": "5",
+              "description": "Shunt fraction control variable [2 – 70].",
+              "fieldName": "cShuntFrac"
+            }
+          ],
+          "events": [
+            {
+              "name": "surrogate-data",
+              "type": { "text": "CustomEvent" },
+              "description": "Fired on every inference step (~30 Hz). `event.detail` contains `plot_vars` (4 waveform variables), `monitor_vars` (10 clinical variables), and `step` (monotonic counter)."
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "pneumonia-surrogate",
+          "declaration": {
+            "name": "PneumoniaSurrogate",
+            "module": "pneumonia-surrogate.js"
+          }
+        }
+      ]
+    }
+  ]
+}
