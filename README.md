@@ -102,21 +102,3 @@ All three control attributes are also exposed as JS properties (`totalCompliance
 ```
 
 The event bubbles and is `composed: true`, so it crosses Shadow DOM boundaries.
-
-## Rebuilding from source
-
-If you have the original PyTorch checkpoint, regenerate the model assets:
-
-```bash
-# From the project root (requires Python, torch, onnx, joblib, scikit-learn)
-python export_onnx.py
-# Outputs: web/surrogate_model.onnx, web/scalers.json, web/golden_seed.json
-```
-
-To rebuild the JS bundle:
-
-```bash
-cd web
-npm install
-npm run build
-```
