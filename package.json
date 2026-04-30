@@ -1,8 +1,15 @@
 {
   "name": "pneumonia-surrogate",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Web Component running an ONNX surrogate model of a respiratory physiology simulator at ~30 Hz in the browser.",
-  "keywords": ["web-component", "onnx", "onnxruntime", "surrogate-model", "physiology", "respiratory"],
+  "keywords": [
+    "web-component",
+    "onnx",
+    "onnxruntime",
+    "surrogate-model",
+    "physiology",
+    "respiratory"
+  ],
   "license": "MIT",
   "main": "dist/pneumonia-surrogate.js",
   "customElements": "custom-elements.json",
