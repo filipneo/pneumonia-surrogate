@@ -11,6 +11,10 @@
     "respiratory"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/filipneo/pneumonia-surrogate.git"
+  },
   "main": "dist/pneumonia-surrogate.js",
   "customElements": "custom-elements.json",
   "files": [
