@@ -16,8 +16,7 @@ Or load directly from a CDN with no build step:
 
 ## Model assets
 
-The component requires three external files that are too large for npm.
-Download them from the [GitHub Releases](../../releases/latest) page and serve them alongside your HTML:
+The component requires three files that are included in the npm package and served alongside your HTML:
 
 | File | Description |
 |------|-------------|
