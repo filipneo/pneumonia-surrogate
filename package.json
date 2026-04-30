@@ -1,6 +1,6 @@
 {
   "name": "pneumonia-surrogate",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Web Component running an ONNX surrogate model of a respiratory physiology simulator at ~30 Hz in the browser.",
   "keywords": [
     "web-component",
