@@ -12,11 +12,19 @@ Or load directly from a CDN with no build step:
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/pneumonia-surrogate/dist/pneumonia-surrogate.js"></script>
+
+<pneumonia-surrogate id="sim"></pneumonia-surrogate>
+
+<script>
+  const sim = document.getElementById('sim');
+  sim.start();
+  sim.addEventListener('surrogate-data', (e) => console.log(e.detail));
+</script>
 ```
 
 ## Model assets
 
-The component requires three files that are included in the npm package and served alongside your HTML:
+The three model files are included in the npm package and are also available on jsDelivr CDN. By default the component fetches them from CDN automatically, so no local setup is required. Override the URLs via attributes only if you want to self-host the files.
 
 | File | Description |
 |------|-------------|
@@ -26,19 +34,13 @@ The component requires three files that are included in the npm package and serv
 
 ## Usage
 
+The URL attributes (`model-url`, `scalers-url`, `seed-url`) default to the published CDN location and can be omitted.
+
 ```html
 <!-- If installed via npm, import from dist/ -->
 <script src="node_modules/pneumonia-surrogate/dist/pneumonia-surrogate.js"></script>
 
-<pneumonia-surrogate
-    id="sim"
-    model-url="./surrogate_model.onnx"
-    scalers-url="./scalers.json"
-    seed-url="./golden_seed.json"
-    total-compliance="60"
-    dv="150"
-    cshunt-frac="5">
-</pneumonia-surrogate>
+<pneumonia-surrogate id="sim"></pneumonia-surrogate>
 
 <script>
   const sim = document.getElementById('sim');
@@ -51,6 +53,11 @@ The component requires three files that are included in the npm package and serv
     const { plot_vars, monitor_vars, step } = event.detail;
     console.log('Step', step, plot_vars, monitor_vars);
   });
+
+  // Change control variables at any time while the simulation is running
+  sim.totalCompliance = 80;
+  sim.dv = 200;
+  sim.cShuntFrac = 10;
 </script>
 ```
 
@@ -58,9 +65,9 @@ The component requires three files that are included in the npm package and serv
 
 | Attribute | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `model-url` | string | — | URL to `surrogate_model.onnx` **(required)** |
-| `scalers-url` | string | — | URL to `scalers.json` **(required)** |
-| `seed-url` | string | — | URL to `golden_seed.json` **(required)** |
+| `model-url` | string | CDN | URL to `surrogate_model.onnx` |
+| `scalers-url` | string | CDN | URL to `scalers.json` |
+| `seed-url` | string | CDN | URL to `golden_seed.json` |
 | `total-compliance` | number | `60` | Lung compliance [10 – 200] |
 | `dv` | number | `150` | Dead volume [150 – 400] |
 | `cshunt-frac` | number | `5` | Shunt fraction [2 – 70] |
