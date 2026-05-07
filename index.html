@@ -9,7 +9,7 @@
     The dist bundle already includes onnxruntime-web and registers
     <pneumonia-surrogate> as a custom element. No separate ort script needed.
   -->
-  <script src="./dist/pneumonia-surrogate.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pneumonia-surrogate@1.0.5/dist/pneumonia-surrogate.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -128,6 +128,9 @@
   <h1>PNEUMONIA SURROGATE - ONNX DEMO</h1>
   <pneumonia-surrogate
       id="surrogate"
+      model-url="./surrogate_model.onnx"
+      scalers-url="./scalers.json"
+      seed-url="./golden_seed.json"
       total-compliance="60"
       dv="150"
       cshunt-frac="5">
@@ -225,7 +228,7 @@
 
   const DISPLAY_STEPS = 300;
   // One colour per waveform chart.
-  const CHART_COLORS = ["#42a5f5", "#66bb6a", "#ffca28", "#ef5350"];
+  const CHART_COLORS = ["#ffca28", "#ce93d8", "#66bb6a", "#ef5350"];
 
   // ---- Element refs ---------------------------------------------------------
 

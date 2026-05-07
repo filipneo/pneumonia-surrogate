@@ -1,6 +1,6 @@
 {
   "name": "pneumonia-surrogate",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Web Component running an ONNX surrogate model of a respiratory physiology simulator at ~30 Hz in the browser.",
   "keywords": [
     "web-component",
@@ -29,7 +29,7 @@
     "prepublishOnly": "node build.mjs"
   },
   "dependencies": {
-    "onnxruntime-web": "^1.21.0"
+    "onnxruntime-web": "1.21.0"
   },
   "devDependencies": {
     "esbuild": "^0.25.0"
